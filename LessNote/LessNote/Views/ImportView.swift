@@ -6,6 +6,9 @@ struct ImportView: View {
     @EnvironmentObject var knowledgeManager: KnowledgeManager
     @State private var selectedFiles: [URL] = []
     @State private var isDragging = false
+    @State private var showConfirmationDialog = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
     
     let allowedTypes = [
         UTType.text,
@@ -15,65 +18,76 @@ struct ImportView: View {
     ]
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 0) {
+            // Header
             Text("Import Files")
                 .font(.title2)
                 .padding(.top)
+                .padding(.bottom, 20)
             
-            // Drop zone
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(style: StrokeStyle(lineWidth: 2, dash: [5]))
-                    .fill(isDragging ? Color.accentColor : Color.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                
-                VStack(spacing: 12) {
-                    Image(systemName: "square.and.arrow.down")
-                        .font(.largeTitle)
-                        .foregroundColor(.secondary)
-                    
-                    Text("Drop files here")
-                        .foregroundColor(.secondary)
-                    
-                    Text("or")
-                        .foregroundColor(.secondary)
-                        .padding(.vertical, 4)
-                    
-                    Button("Select Files") {
-                        selectFiles()
-                    }
-                    .buttonStyle(.bordered)
-                }
-                .padding()
-            }
-            .padding()
-            
-            // Selected files list
-            if !selectedFiles.isEmpty {
-                VStack(alignment: .leading) {
-                    Text("Selected Files:")
-                        .font(.headline)
-                    
-                    ForEach(selectedFiles, id: \.self) { url in
-                        HStack {
-                            Image(systemName: "doc")
-                            Text(url.lastPathComponent)
-                            Spacer()
-                            Button {
-                                selectedFiles.removeAll { $0 == url }
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.secondary)
+            // Content Area
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Drop zone
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [5]))
+                            .fill(isDragging ? Color.accentColor : Color.secondary)
+                            .frame(height: 200)
+                        
+                        VStack(spacing: 12) {
+                            Image(systemName: "square.and.arrow.down")
+                                .font(.largeTitle)
+                                .foregroundColor(.secondary)
+                            
+                            Text("Drop files here")
+                                .foregroundColor(.secondary)
+                            
+                            Text("or")
+                                .foregroundColor(.secondary)
+                                .padding(.vertical, 4)
+                            
+                            Button("Select Files") {
+                                selectFiles()
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.bordered)
                         }
-                        .padding(.vertical, 2)
+                        .padding()
+                    }
+                    .padding(.horizontal)
+                    
+                    // Selected files list
+                    if !selectedFiles.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Selected Files:")
+                                .font(.headline)
+                            
+                            ForEach(selectedFiles, id: \.self) { url in
+                                HStack {
+                                    Image(systemName: "doc")
+                                    Text(url.lastPathComponent)
+                                        .lineLimit(1)
+                                    Spacer()
+                                    Button {
+                                        selectedFiles.removeAll { $0 == url }
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .padding(.vertical, 2)
+                            }
+                        }
+                        .padding(.horizontal)
                     }
                 }
-                .padding()
             }
             
-            // Buttons
+            Divider()
+                .padding(.vertical)
+            
+            // Footer Buttons
             HStack {
                 Button("Cancel") {
                     dismiss()
@@ -91,6 +105,27 @@ struct ImportView: View {
             .padding()
         }
         .frame(width: 400, height: 300)
+        .confirmationDialog(
+            "Import Files",
+            isPresented: $showConfirmationDialog,
+            titleVisibility: .visible
+        ) {
+            Button("Import \(selectedFiles.count) file\(selectedFiles.count == 1 ? "" : "s")") {
+                processImport()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to import these files?")
+        }
+        .alert("Import Error",
+            isPresented: $showErrorAlert,
+            actions: {
+                Button("OK", role: .cancel) { }
+            },
+            message: {
+                Text(errorMessage)
+            }
+        )
         .onDrop(of: allowedTypes, isTargeted: $isDragging) { providers in
             Task {
                 for provider in providers {
@@ -119,16 +154,18 @@ struct ImportView: View {
     }
     
     private func importFiles() {
-        // Convert URLs to ImportedFiles and add to the current group
-        let importedFiles = selectedFiles.map { url in
-            ImportedFile(url: url, category: categorizeFile(url))
+        guard !selectedFiles.isEmpty else { return }
+        showConfirmationDialog = true
+    }
+    
+    private func processImport() {
+        do {
+            try knowledgeManager.ingestFilesIntoNewGroup(urls: selectedFiles)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showErrorAlert = true
         }
-        
-        // Here you would typically add these files to your knowledge manager
-        // This is a placeholder for where you'll implement the actual file processing
-        print("Importing files: \(importedFiles)")
-        
-        dismiss()
     }
     
     private func categorizeFile(_ url: URL) -> FileCategory {

@@ -1,6 +1,33 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+extension FileManager {
+    func fileExists(at url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        return fileExists(atPath: url.path, isDirectory: &isDirectory)
+    }
+}
+
+enum ImportError: LocalizedError {
+    case userCancelled
+    case emptyGroupName
+    case fileAccessDenied
+    case invalidFile
+    
+    var errorDescription: String? {
+        switch self {
+        case .userCancelled:
+            return "Import cancelled by user"
+        case .emptyGroupName:
+            return "Group name cannot be empty"
+        case .fileAccessDenied:
+            return "Unable to access one or more files"
+        case .invalidFile:
+            return "One or more files are invalid or corrupted"
+        }
+    }
+}
+
 class KnowledgeManager: ObservableObject {
     @Published var knowledgeGroups: [KnowledgeGroup] = []
     
@@ -39,7 +66,7 @@ class KnowledgeManager: ObservableObject {
         knowledgeGroups.append(biologyGroup)
     }
     
-    func ingestFilesIntoNewGroup(urls: [URL]) {
+    func ingestFilesIntoNewGroup(urls: [URL]) throws {
         let alert = NSAlert()
         alert.messageText = "Enter a Group Name"
         alert.informativeText = "Provide a name for the new group:"
@@ -50,16 +77,20 @@ class KnowledgeManager: ObservableObject {
         alert.accessoryView = input
         
         let response = alert.runModal()
-        guard response == .alertFirstButtonReturn else { return }
+        guard response == .alertFirstButtonReturn else {
+            throw ImportError.userCancelled
+        }
         
         let groupName = input.stringValue.trimmingCharacters(in: .whitespaces)
-        guard !groupName.isEmpty else { return }
+        guard !groupName.isEmpty else {
+            throw ImportError.emptyGroupName
+        }
         
         // Create ImportedFile objects and copy files to app's documents directory
-        let importedFiles = urls.compactMap { sourceURL -> ImportedFile? in
+        let importedFiles = try urls.compactMap { sourceURL -> ImportedFile? in
             // Get the documents directory
             guard let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-                return nil
+                throw ImportError.fileAccessDenied
             }
             
             // Create a unique filename
@@ -68,11 +99,14 @@ class KnowledgeManager: ObservableObject {
             
             // Copy the file
             do {
+                if !FileManager.default.fileExists(at: sourceURL) {
+                    throw ImportError.invalidFile
+                }
                 try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
                 return ImportedFile(url: destinationURL, category: guessCategory(for: sourceURL))
             } catch {
                 print("Error copying file: \(error)")
-                return nil
+                throw ImportError.fileAccessDenied
             }
         }
         
