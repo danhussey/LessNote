@@ -3,7 +3,6 @@ import SwiftUI
 struct TopicDetailView: View {
     let group: KnowledgeGroup
     @State private var showImportSheet = false
-    @State private var selectedGenerationMode = GenerationMode.conservative
     @State private var numberOfClozes = 5
     @State private var selectedSet: ClozeSet?
     @Binding var selectedClozeItem: ClozeItem?
@@ -16,11 +15,7 @@ struct TopicDetailView: View {
         return formatter
     }()
     
-    enum GenerationMode: String, CaseIterable {
-        case conservative = "Conservative"
-        case balanced = "Balanced"
-        case aggressive = "Aggressive"
-    }
+
     
     private func iconName(for file: ImportedFile) -> String {
         switch file.url.pathExtension.lowercased() {
@@ -94,13 +89,6 @@ struct TopicDetailView: View {
                             .font(.headline)
                         
                         VStack(alignment: .leading, spacing: 12) {
-                            Picker("Generation Mode", selection: $selectedGenerationMode) {
-                                ForEach(GenerationMode.allCases, id: \.self) { mode in
-                                    Text(mode.rawValue).tag(mode)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            
                             HStack {
                                 Text("Items to Generate:")
                                 Stepper("\(numberOfClozes)", value: $numberOfClozes, in: 1...50)
