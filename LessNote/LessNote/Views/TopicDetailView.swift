@@ -3,6 +3,21 @@ import SwiftUI
 struct TopicDetailView: View {
     let group: KnowledgeGroup
     @State private var showExportSheet = false
+    @State private var showImportSheet = false
+    @EnvironmentObject var knowledgeManager: KnowledgeManager
+    
+    private func iconName(for file: ImportedFile) -> String {
+        switch file.url.pathExtension.lowercased() {
+        case "pdf":
+            return "doc.fill"
+        case "txt":
+            return "doc.text"
+        case "md", "markdown":
+            return "doc.plaintext"
+        default:
+            return "doc"
+        }
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -17,31 +32,88 @@ struct TopicDetailView: View {
                 
                 Spacer()
                 
-                Button(action: { showExportSheet.toggle() }) {
-                    Label("Export", systemImage: "square.and.arrow.up")
+                HStack(spacing: 12) {
+                    Button(action: { showImportSheet.toggle() }) {
+                        Label("Import", systemImage: "square.and.arrow.down")
+                    }
+                    .buttonStyle(.bordered)
+                    
+                    Button(action: { showExportSheet.toggle() }) {
+                        Label("Export", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.bordered)
             }
             .padding(.bottom)
             
-            GroupBox("Files") {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        ForEach(group.files) { file in
-                            HStack {
-                                Image(systemName: "doc.text")
-                                    .foregroundColor(.accentColor)
-                                Text(file.url.lastPathComponent)
-                                Spacer()
-                                Text(file.category.rawValue)
-                                    .foregroundColor(.secondary)
-                                    .font(.caption)
+            GroupBox {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Text("Files")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    
+                    if group.files.isEmpty {
+                        ContentUnavailableView {
+                            Label("No Files", systemImage: "doc")
+                        } description: {
+                            Text("Import files to get started")
+                        } actions: {
+                            Button("Import Files") {
+                                showImportSheet.toggle()
                             }
-                            Divider()
+                            .buttonStyle(.bordered)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 16) {
+                                ForEach(FileCategory.allCases, id: \.self) { category in
+                                    let categoryFiles = group.files.filter { $0.category == category }
+                                    if !categoryFiles.isEmpty {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text(category.rawValue.capitalized)
+                                                .font(.subheadline)
+                                                .foregroundColor(.secondary)
+                                                .padding(.leading, 4)
+                                            
+                                            VStack(spacing: 4) {
+                                                ForEach(categoryFiles) { file in
+                                                    HStack {
+                                                        Image(systemName: iconName(for: file))
+                                                            .foregroundColor(.accentColor)
+                                                        Text(file.url.lastPathComponent)
+                                                            .lineLimit(1)
+                                                        Spacer()
+                                                        Text(file.url.pathExtension.uppercased())
+                                                            .font(.caption)
+                                                            .foregroundColor(.secondary)
+                                                            .padding(.horizontal, 6)
+                                                            .padding(.vertical, 2)
+                                                            .background(Color.secondary.opacity(0.1))
+                                                            .cornerRadius(4)
+                                                    }
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 6)
+                                                    .background(Color.secondary.opacity(0.05))
+                                                    .cornerRadius(8)
+                                                }
+                                            }
+                                        }
+                                        
+                                        if category != FileCategory.allCases.last {
+                                            Divider()
+                                                .padding(.vertical, 8)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                    .padding()
                 }
+                .padding()
             }
             
             GroupBox("Statistics") {
@@ -68,6 +140,10 @@ struct TopicDetailView: View {
         .padding()
         .sheet(isPresented: $showExportSheet) {
             ExportView(group: group)
+        }
+        .sheet(isPresented: $showImportSheet) {
+            ImportView()
+                .frame(width: 400, height: 300)
         }
     }
     

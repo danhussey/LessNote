@@ -1,0 +1,25 @@
+Introduction to Machine Learning
+===============================
+
+Key Concepts:
+1. Supervised Learning
+   - Classification
+   - Regression
+   - Examples: spam detection, house price prediction
+
+2. Unsupervised Learning
+   - Clustering
+   - Dimensionality Reduction
+   - Examples: customer segmentation, feature extraction
+
+3. Neural Networks
+   - Neurons and Layers
+   - Activation Functions
+   - Backpropagation
+
+Remember: Machine learning is a subset of artificial intelligence that focuses on using data and algorithms to imitate how humans learn.
+
+Practice Questions:
+1. What are the main types of machine learning?
+2. How does supervised learning differ from unsupervised learning?
+3. What is the role of activation functions in neural networks?

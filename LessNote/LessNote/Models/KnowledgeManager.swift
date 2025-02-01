@@ -55,13 +55,30 @@ class KnowledgeManager: ObservableObject {
         let groupName = input.stringValue.trimmingCharacters(in: .whitespaces)
         guard !groupName.isEmpty else { return }
         
-        let importedFiles = urls.map { url in
-            ImportedFile(url: url, category: guessCategory(for: url))
+        // Create ImportedFile objects and copy files to app's documents directory
+        let importedFiles = urls.compactMap { sourceURL -> ImportedFile? in
+            // Get the documents directory
+            guard let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+                return nil
+            }
+            
+            // Create a unique filename
+            let uniqueFilename = "\(UUID().uuidString)_\(sourceURL.lastPathComponent)"
+            let destinationURL = documentsDir.appendingPathComponent(uniqueFilename)
+            
+            // Copy the file
+            do {
+                try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+                return ImportedFile(url: destinationURL, category: guessCategory(for: sourceURL))
+            } catch {
+                print("Error copying file: \(error)")
+                return nil
+            }
         }
         
         var allClozeItems: [ClozeItem] = []
-        for url in urls {
-            if let content = try? String(contentsOf: url, encoding: .utf8) {
+        for file in importedFiles {
+            if let content = try? String(contentsOf: file.url, encoding: .utf8) {
                 let items = generateClozeItems(from: content)
                 allClozeItems.append(contentsOf: items)
             }
@@ -73,7 +90,10 @@ class KnowledgeManager: ObservableObject {
             clozeItems: allClozeItems
         )
         
-        knowledgeGroups.append(newGroup)
+        DispatchQueue.main.async {
+            self.knowledgeGroups.append(newGroup)
+            self.objectWillChange.send()
+        }
     }
     
     private func guessCategory(for url: URL) -> FileCategory {
