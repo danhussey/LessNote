@@ -1,0 +1,50 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon files
+Icon?
+._*
+
+# Thumbnails
+._*
+
+# Xcode specific files and folders
+
+# Build products and generated files
+build/
+DerivedData/
+*.xcuserstate
+
+# User-specific settings (avoid merge conflicts)
+xcuserdata/
+
+# Xcode temporary files
+*.moved-aside
+*.xccheckout
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Uncomment the next lines if using CocoaPods
+# CocoaPods
+# Pods/
+
+# Uncomment the next lines if using Carthage
+# Carthage
+# Carthage/Build/
+
+# Swift Package Manager
+/.build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output/
+
+# Other common files
+*.swp
+*.swo
