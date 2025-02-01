@@ -20,7 +20,14 @@ struct CourseSidebarView: View {
             
             Section("Course Topics") {
                 ForEach(knowledgeManager.knowledgeGroups) { group in
-                    NavigationLink(value: group.id) {
+                    NavigationLink(
+                        isActive: Binding(
+                            get: { selectedGroupId == group.id },
+                            set: { if $0 { selectedGroupId = group.id } }
+                        )
+                    ) {
+                        EmptyView()
+                    } label: {
                         VStack(alignment: .leading) {
                             Text(group.name)
                                 .font(.headline)
@@ -53,7 +60,8 @@ private struct ImportView: View {
                 panel.canChooseDirectories = false
                 panel.allowedContentTypes = [
                     UTType.plainText,
-//                    UTType.markdown,
+                    UTType(filenameExtension: "md")!,
+                    UTType(filenameExtension: "markdown")!,
                     UTType.pdf
                 ]
                 
