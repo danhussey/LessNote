@@ -134,7 +134,7 @@ struct TopicDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .sheet(isPresented: $showImportSheet) {
-            ImportView()
+            ImportView(groupId: group.id)
                 .frame(width: 400, height: 300)
         }
     }
@@ -213,4 +213,3 @@ private struct GeneratedSetsView: View {
         }
     }
 }
-

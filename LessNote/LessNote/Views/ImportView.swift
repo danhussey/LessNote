@@ -2,11 +2,11 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct ImportView: View {
+    let groupId: UUID
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var knowledgeManager: KnowledgeManager
     @State private var selectedFiles: [URL] = []
     @State private var isDragging = false
-    @State private var showConfirmationDialog = false
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     
@@ -105,18 +105,6 @@ struct ImportView: View {
             .padding()
         }
         .frame(width: 400, height: 300)
-        .confirmationDialog(
-            "Import Files",
-            isPresented: $showConfirmationDialog,
-            titleVisibility: .visible
-        ) {
-            Button("Import \(selectedFiles.count) file\(selectedFiles.count == 1 ? "" : "s")") {
-                processImport()
-            }
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("Are you sure you want to import these files?")
-        }
         .alert("Import Error",
             isPresented: $showErrorAlert,
             actions: {
@@ -155,12 +143,9 @@ struct ImportView: View {
     
     private func importFiles() {
         guard !selectedFiles.isEmpty else { return }
-        showConfirmationDialog = true
-    }
-    
-    private func processImport() {
+        
         do {
-            try knowledgeManager.ingestFilesIntoNewGroup(urls: selectedFiles)
+            try knowledgeManager.addFilesToGroup(urls: selectedFiles, groupId: groupId)
             dismiss()
         } catch {
             errorMessage = error.localizedDescription

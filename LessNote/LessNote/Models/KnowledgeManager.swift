@@ -9,17 +9,11 @@ extension FileManager {
 }
 
 enum ImportError: LocalizedError {
-    case userCancelled
-    case emptyGroupName
     case fileAccessDenied
     case invalidFile
     
     var errorDescription: String? {
         switch self {
-        case .userCancelled:
-            return "Import cancelled by user"
-        case .emptyGroupName:
-            return "Group name cannot be empty"
         case .fileAccessDenied:
             return "Unable to access one or more files"
         case .invalidFile:
@@ -66,24 +60,9 @@ class KnowledgeManager: ObservableObject {
         knowledgeGroups.append(biologyGroup)
     }
     
-    func ingestFilesIntoNewGroup(urls: [URL]) throws {
-        let alert = NSAlert()
-        alert.messageText = "Enter a Group Name"
-        alert.informativeText = "Provide a name for the new group:"
-        alert.addButton(withTitle: "OK")
-        alert.addButton(withTitle: "Cancel")
-        
-        let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-        alert.accessoryView = input
-        
-        let response = alert.runModal()
-        guard response == .alertFirstButtonReturn else {
-            throw ImportError.userCancelled
-        }
-        
-        let groupName = input.stringValue.trimmingCharacters(in: .whitespaces)
-        guard !groupName.isEmpty else {
-            throw ImportError.emptyGroupName
+    func addFilesToGroup(urls: [URL], groupId: UUID) throws {
+        guard let groupIndex = knowledgeGroups.firstIndex(where: { $0.id == groupId }) else {
+            throw ImportError.invalidFile
         }
         
         // Create ImportedFile objects and copy files to app's documents directory
@@ -118,14 +97,9 @@ class KnowledgeManager: ObservableObject {
             }
         }
         
-        let newGroup = KnowledgeGroup(
-            name: groupName,
-            files: importedFiles,
-            clozeItems: allClozeItems
-        )
-        
         DispatchQueue.main.async {
-            self.knowledgeGroups.append(newGroup)
+            self.knowledgeGroups[groupIndex].files.append(contentsOf: importedFiles)
+            self.knowledgeGroups[groupIndex].clozeItems.append(contentsOf: allClozeItems)
             self.objectWillChange.send()
         }
     }
