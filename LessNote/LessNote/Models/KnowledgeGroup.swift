@@ -4,12 +4,12 @@ struct KnowledgeGroup: Identifiable, Codable {
     var id: UUID
     let name: String
     var files: [ImportedFile]
-    var clozeItems: [ClozeItem]
+    var clozeSets: [ClozeSet]
     
-    init(id: UUID = UUID(), name: String, files: [ImportedFile], clozeItems: [ClozeItem]) {
+    init(id: UUID = UUID(), name: String, files: [ImportedFile], clozeSets: [ClozeSet] = []) {
         self.id = id
         self.name = name
         self.files = files
-        self.clozeItems = clozeItems
+        self.clozeSets = clozeSets
     }
 }

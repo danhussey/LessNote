@@ -1,5 +1,25 @@
 import SwiftUI
 
+struct ClozeSet: Identifiable, Codable, Hashable {
+    var id: UUID
+    let createdAt: Date
+    let items: [ClozeItem]
+    
+    init(id: UUID = UUID(), items: [ClozeItem]) {
+        self.id = id
+        self.createdAt = Date()
+        self.items = items
+    }
+    
+    static func == (lhs: ClozeSet, rhs: ClozeSet) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
 struct ClozeItem: Identifiable, Codable, Hashable {
     enum PriorityLevel: String, Codable, Identifiable {
         case high

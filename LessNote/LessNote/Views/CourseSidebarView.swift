@@ -19,7 +19,7 @@ struct CourseSidebarView: View {
                         VStack(alignment: .leading) {
                             Text(group.name)
                                 .font(.headline)
-                            Text("\(group.clozeItems.count) items")
+                            Text("\(group.clozeSets.flatMap { $0.items }.count) items")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -48,7 +48,7 @@ struct CourseSidebarView: View {
                 let newGroup = KnowledgeGroup(
                     name: topicName,
                     files: [],
-                    clozeItems: []
+                    clozeSets: []
                 )
                 knowledgeManager.knowledgeGroups.append(newGroup)
                 selectedGroupId = newGroup.id

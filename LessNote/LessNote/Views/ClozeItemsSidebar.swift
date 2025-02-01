@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ClozeItemsSidebar: View {
     let group: KnowledgeGroup
+    let selectedSet: ClozeSet?
     @Binding var selectedItem: ClozeItem?
     @State private var searchText = ""
     @State private var priorityFilter: ClozeItem.PriorityLevel?
@@ -41,7 +42,8 @@ struct ClozeItemsSidebar: View {
     }
     
     private var filteredItems: [ClozeItem] {
-        group.clozeItems.filter { item in
+        let items = selectedSet?.items ?? []
+        return items.filter { item in
             let matchesSearch = searchText.isEmpty ||
                 item.text.localizedCaseInsensitiveContains(searchText)
             let matchesPriority = priorityFilter == nil || item.priority == priorityFilter

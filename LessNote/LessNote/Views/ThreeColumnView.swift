@@ -16,7 +16,7 @@ struct ThreeColumnView: View {
             Group {
                 if let selectedId = selectedGroupId,
                    let selectedGroup = knowledgeManager.knowledgeGroups.first(where: { $0.id == selectedId }) {
-                    TopicDetailView(group: selectedGroup)
+                    TopicDetailView(group: selectedGroup, selectedClozeItem: $selectedClozeItem)
                 } else {
                     ContentUnavailableView("Select a Topic",
                         systemImage: "doc.text.magnifyingglass",
@@ -29,7 +29,7 @@ struct ThreeColumnView: View {
             Group {
                 if let selectedId = selectedGroupId,
                    let selectedGroup = knowledgeManager.knowledgeGroups.first(where: { $0.id == selectedId }) {
-                    ClozeItemsSidebar(group: selectedGroup, selectedItem: $selectedClozeItem)
+                    ClozeItemsSidebar(group: selectedGroup, selectedSet: selectedGroup.clozeSets.first(where: { $0.id == selectedGroup.clozeSets.first?.id }), selectedItem: $selectedClozeItem)
                 } else {
                     ContentUnavailableView("No Cloze Items",
                         systemImage: "doc.text.fill",

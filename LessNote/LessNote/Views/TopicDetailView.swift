@@ -5,7 +5,16 @@ struct TopicDetailView: View {
     @State private var showImportSheet = false
     @State private var selectedGenerationMode = GenerationMode.conservative
     @State private var numberOfClozes = 5
+    @State private var selectedSet: ClozeSet?
+    @Binding var selectedClozeItem: ClozeItem?
     @EnvironmentObject var knowledgeManager: KnowledgeManager
+    
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
     
     enum GenerationMode: String, CaseIterable {
         case conservative = "Conservative"
@@ -35,7 +44,7 @@ struct TopicDetailView: View {
                         Text(group.name)
                             .font(.title)
                             .bold()
-                        Text("\(group.files.count) files · \(group.clozeItems.count) items")
+                        Text("\(group.clozeSets.flatMap { $0.items }.count) items")
                             .foregroundColor(.secondary)
                     }
                     
@@ -114,16 +123,46 @@ struct TopicDetailView: View {
                         Text("Generated Sets")
                             .font(.headline)
                         
-                        if group.clozeItems.isEmpty {
+                        if group.clozeSets.isEmpty {
                             ContentUnavailableView {
-                                Label("No Generated Items", systemImage: "square.stack.3d.up")
+                                Label("No Generated Sets", systemImage: "square.stack.3d.up")
                             } description: {
                                 Text("Generate your first set of cloze items")
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
                         } else {
-                            GeneratedSetsView(items: group.clozeItems)
+                            ScrollView {
+                                VStack(spacing: 8) {
+                                    ForEach(group.clozeSets) { set in
+                                        Button(action: { selectedSet = set }) {
+                                            HStack {
+                                                VStack(alignment: .leading) {
+                                                    Text("Generated Set")
+                                                        .font(.headline)
+                                                    Text(dateFormatter.string(from: set.createdAt))
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                                Spacer()
+                                                Text("\(set.items.count) items")
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                            .padding()
+                                            .background(selectedSet?.id == set.id ? Color.accentColor.opacity(0.1) : Color.clear)
+                                            .cornerRadius(8)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                                            )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                            .frame(maxHeight: 300)
                         }
                     }
                     .padding()
@@ -180,36 +219,34 @@ private struct FileListView: View {
     }
 }
 
-private struct GeneratedSetsView: View {
-    let items: [ClozeItem]
+private struct ClozeSetListView: View {
+    let sets: [ClozeSet]
+    @Binding var selectedSet: ClozeSet?
+    let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(Array(items.enumerated()), id: \.1.id) { index, item in
-                if index < 3 {  // Preview only first 3 items
-                    HStack {
-                        Text(item.text)
-                            .lineLimit(2)
-                        Spacer()
-                        Text(item.priority.rawValue.capitalized)
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(item.priority.color.opacity(0.2))
-                            .foregroundColor(item.priority.color)
-                            .cornerRadius(4)
-                    }
-                    .padding()
-                    .background(Color.secondary.opacity(0.05))
-                    .cornerRadius(8)
+        List(sets, selection: $selectedSet) { set in
+            HStack {
+                VStack(alignment: .leading) {
+                    Text("Generated Set")
+                        .font(.headline)
+                    Text(dateFormatter.string(from: set.createdAt))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
-            }
-            
-            if items.count > 3 {
-                Text("+ \(items.count - 3) more items")
+                Spacer()
+                Text("\(set.items.count) items")
+                    .font(.caption)
                     .foregroundColor(.secondary)
-                    .padding(.leading)
             }
+            .tag(set)
+            .padding(.vertical, 4)
         }
+        .listStyle(.plain)
     }
 }

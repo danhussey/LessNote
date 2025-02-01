@@ -51,10 +51,12 @@ class KnowledgeManager: ObservableObject {
             )
         ]
         
+        let biologyClozeSet = ClozeSet(items: biologyClozeItems)
+        
         let biologyGroup = KnowledgeGroup(
             name: "Biology",
             files: biologyFiles,
-            clozeItems: biologyClozeItems
+            clozeSets: [biologyClozeSet]
         )
         
         knowledgeGroups.append(biologyGroup)
@@ -89,17 +91,19 @@ class KnowledgeManager: ObservableObject {
             }
         }
         
-        var allClozeItems: [ClozeItem] = []
+        var generatedItems: [ClozeItem] = []
         for file in importedFiles {
             if let content = try? String(contentsOf: file.url, encoding: .utf8) {
                 let items = generateClozeItems(from: content)
-                allClozeItems.append(contentsOf: items)
+                generatedItems.append(contentsOf: items)
             }
         }
         
+        let newSet = ClozeSet(items: generatedItems)
+        
         DispatchQueue.main.async {
             self.knowledgeGroups[groupIndex].files.append(contentsOf: importedFiles)
-            self.knowledgeGroups[groupIndex].clozeItems.append(contentsOf: allClozeItems)
+            self.knowledgeGroups[groupIndex].clozeSets.append(newSet)
             self.objectWillChange.send()
         }
     }
@@ -140,8 +144,10 @@ class KnowledgeManager: ObservableObject {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         
         var csvText = "Text,Original,Priority\n"
-        for item in group.clozeItems {
-            csvText += "\"\(item.text)\",\"\(item.original)\",\(item.priority.rawValue)\n"
+        for set in group.clozeSets {
+            for item in set.items {
+                csvText += "\"\(item.text)\",\"\(item.original)\",\(item.priority.rawValue)\n"
+            }
         }
         
         try csvText.write(to: fileURL, atomically: true, encoding: .utf8)
