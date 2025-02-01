@@ -5,7 +5,6 @@ struct TopicDetailView: View {
     @State private var showImportSheet = false
     @State private var selectedGenerationMode = GenerationMode.conservative
     @State private var numberOfClozes = 5
-    @State private var showGenerationOptions = false
     @EnvironmentObject var knowledgeManager: KnowledgeManager
     
     enum GenerationMode: String, CaseIterable {
@@ -98,11 +97,6 @@ struct TopicDetailView: View {
                                 Stepper("\(numberOfClozes)", value: $numberOfClozes, in: 1...50)
                             }
                             
-                            Button(action: { showGenerationOptions.toggle() }) {
-                                Label("Advanced Options", systemImage: "gearshape")
-                            }
-                            .buttonStyle(.bordered)
-                            
                             Button(action: generateClozes) {
                                 Label("Generate Cloze Items", systemImage: "wand.and.stars")
                             }
@@ -142,9 +136,6 @@ struct TopicDetailView: View {
         .sheet(isPresented: $showImportSheet) {
             ImportView()
                 .frame(width: 400, height: 300)
-        }
-        .sheet(isPresented: $showGenerationOptions) {
-            GenerationOptionsView()
         }
     }
     
@@ -223,28 +214,3 @@ private struct GeneratedSetsView: View {
     }
 }
 
-private struct GenerationOptionsView: View {
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Advanced Generation Options")
-                .font(.title2)
-            
-            Form {
-                // Placeholder for future AI-specific options
-                Toggle("Include Context", isOn: .constant(true))
-                Toggle("Use Technical Terms", isOn: .constant(true))
-                Toggle("Generate Hints", isOn: .constant(false))
-            }
-            .padding()
-            
-            Button("Done") {
-                dismiss()
-            }
-            .buttonStyle(.bordered)
-        }
-        .padding()
-        .frame(width: 400, height: 300)
-    }
-}

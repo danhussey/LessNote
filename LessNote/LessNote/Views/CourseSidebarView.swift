@@ -4,16 +4,12 @@ import UniformTypeIdentifiers
 struct CourseSidebarView: View {
     @EnvironmentObject var knowledgeManager: KnowledgeManager
     @Binding var selectedGroupId: UUID?
-    @State private var showImportSheet = false
     
     var body: some View {
         List(selection: $selectedGroupId) {
             Section {
                 Button(action: addNewTopic) {
                     Label("Add Topic", systemImage: "plus.circle")
-                }
-                Button(action: { showImportSheet.toggle() }) {
-                    Label("Import Files", systemImage: "square.and.arrow.down")
                 }
             }
             
@@ -34,10 +30,6 @@ struct CourseSidebarView: View {
         }
         .listStyle(.sidebar)
         .navigationTitle("Courses")
-        .sheet(isPresented: $showImportSheet) {
-            ImportView()
-                .frame(width: 400, height: 300)
-        }
     }
     
     private func addNewTopic() {
