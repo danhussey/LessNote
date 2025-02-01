@@ -4,38 +4,40 @@ struct ThreeColumnView: View {
     @EnvironmentObject var knowledgeManager: KnowledgeManager
     @State private var selectedGroupId: UUID? = nil
     @State private var selectedClozeItem: ClozeItem? = nil
+    @State private var columnVisibility = NavigationSplitViewVisibility.all
     
     var body: some View {
-        NavigationView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             // Left Sidebar - Course Weeks/Topics
             CourseSidebarView(selectedGroupId: $selectedGroupId)
-                .frame(minWidth: 200, maxWidth: 300)
-            
+                .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 300)
+        } content: {
             // Middle Section - Topic Details and Controls
-            if let selectedId = selectedGroupId,
-               let selectedGroup = knowledgeManager.knowledgeGroups.first(where: { group in group.id == selectedId }) {
-                TopicDetailView(group: selectedGroup)
-                    .frame(minWidth: 400)
-            } else {
-                ContentUnavailableView("Select a Topic",
-                    systemImage: "doc.text.magnifyingglass",
-                    description: Text("Choose a course topic from the sidebar or import new materials"))
-                    .frame(minWidth: 400)
+            Group {
+                if let selectedId = selectedGroupId,
+                   let selectedGroup = knowledgeManager.knowledgeGroups.first(where: { $0.id == selectedId }) {
+                    TopicDetailView(group: selectedGroup)
+                } else {
+                    ContentUnavailableView("Select a Topic",
+                        systemImage: "doc.text.magnifyingglass",
+                        description: Text("Choose a course topic from the sidebar or import new materials"))
+                }
             }
-            
+            .navigationSplitViewColumnWidth(min: 400, ideal: 500, max: .infinity)
+        } detail: {
             // Right Sidebar - Cloze Items
-            if let selectedId = selectedGroupId,
-               let selectedGroup = knowledgeManager.knowledgeGroups.first(where: { group in group.id == selectedId }) {
-                ClozeItemsSidebar(group: selectedGroup, selectedItem: $selectedClozeItem)
-                    .frame(minWidth: 300, maxWidth: .infinity)
-            } else {
-                ContentUnavailableView("No Cloze Items",
-                    systemImage: "doc.text.fill",
-                    description: Text("Select a topic to view its cloze deletions"))
-                    .frame(minWidth: 300, maxWidth: .infinity)
+            Group {
+                if let selectedId = selectedGroupId,
+                   let selectedGroup = knowledgeManager.knowledgeGroups.first(where: { $0.id == selectedId }) {
+                    ClozeItemsSidebar(group: selectedGroup, selectedItem: $selectedClozeItem)
+                } else {
+                    ContentUnavailableView("No Cloze Items",
+                        systemImage: "doc.text.fill",
+                        description: Text("Select a topic to view its cloze deletions"))
+                }
             }
+            .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 400)
         }
-        .navigationViewStyle(.automatic)
-        .frame(minWidth: 1000, minHeight: 600)
+        .navigationSplitViewStyle(.balanced)
     }
 }

@@ -18,6 +18,7 @@
 		486CB6032D4DAA6C0012CB80 /* CourseSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 486CB5F92D4DAA6C0012CB80 /* CourseSidebarView.swift */; };
 		486CB6042D4DAA6C0012CB80 /* ThreeColumnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 486CB5FA2D4DAA6C0012CB80 /* ThreeColumnView.swift */; };
 		486CB6052D4DAA6C0012CB80 /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 486CB5FB2D4DAA6C0012CB80 /* TopicDetailView.swift */; };
+		486CB6072D4DB1970012CB80 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 486CB6062D4DB1970012CB80 /* ImportView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +35,7 @@
 		486CB5F92D4DAA6C0012CB80 /* CourseSidebarView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CourseSidebarView.swift; sourceTree = "<group>"; };
 		486CB5FA2D4DAA6C0012CB80 /* ThreeColumnView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ThreeColumnView.swift; sourceTree = "<group>"; };
 		486CB5FB2D4DAA6C0012CB80 /* TopicDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
+		486CB6062D4DB1970012CB80 /* ImportView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +99,7 @@
 		486CB5FC2D4DAA6C0012CB80 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				486CB6062D4DB1970012CB80 /* ImportView.swift */,
 				486CB5F82D4DAA6C0012CB80 /* ClozeItemsSidebar.swift */,
 				486CB5F92D4DAA6C0012CB80 /* CourseSidebarView.swift */,
 				486CB5FA2D4DAA6C0012CB80 /* ThreeColumnView.swift */,
@@ -189,6 +192,7 @@
 				486CB5FF2D4DAA6C0012CB80 /* ImportedFile.swift in Sources */,
 				486CB6012D4DAA6C0012CB80 /* KnowledgeManager.swift in Sources */,
 				486CB5FE2D4DAA6C0012CB80 /* ClozeItem.swift in Sources */,
+				486CB6072D4DB1970012CB80 /* ImportView.swift in Sources */,
 				486CB6032D4DAA6C0012CB80 /* CourseSidebarView.swift in Sources */,
 				486CB6002D4DAA6C0012CB80 /* KnowledgeGroup.swift in Sources */,
 				4849774C2D1AF2FF00D944B3 /* LessNoteApp.swift in Sources */,

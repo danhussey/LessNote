@@ -2,9 +2,17 @@ import SwiftUI
 
 struct TopicDetailView: View {
     let group: KnowledgeGroup
-    @State private var showExportSheet = false
     @State private var showImportSheet = false
+    @State private var selectedGenerationMode = GenerationMode.conservative
+    @State private var numberOfClozes = 5
+    @State private var showGenerationOptions = false
     @EnvironmentObject var knowledgeManager: KnowledgeManager
+    
+    enum GenerationMode: String, CaseIterable {
+        case conservative = "Conservative"
+        case balanced = "Balanced"
+        case aggressive = "Aggressive"
+    }
     
     private func iconName(for file: ImportedFile) -> String {
         switch file.url.pathExtension.lowercased() {
@@ -20,179 +28,223 @@ struct TopicDetailView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text(group.name)
-                        .font(.title)
-                        .bold()
-                    Text("\(group.files.count) files · \(group.clozeItems.count) items")
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                HStack(spacing: 12) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // Header Section
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(group.name)
+                            .font(.title)
+                            .bold()
+                        Text("\(group.files.count) files · \(group.clozeItems.count) items")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
                     Button(action: { showImportSheet.toggle() }) {
-                        Label("Import", systemImage: "square.and.arrow.down")
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    Button(action: { showExportSheet.toggle() }) {
-                        Label("Export", systemImage: "square.and.arrow.up")
+                        Label("Import Files", systemImage: "square.and.arrow.down")
                     }
                     .buttonStyle(.bordered)
                 }
-            }
-            .padding(.bottom)
-            
-            GroupBox {
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        Text("Files")
-                            .font(.headline)
-                        Spacer()
-                    }
-                    
-                    if group.files.isEmpty {
-                        ContentUnavailableView {
-                            Label("No Files", systemImage: "doc")
-                        } description: {
-                            Text("Import files to get started")
-                        } actions: {
-                            Button("Import Files") {
-                                showImportSheet.toggle()
-                            }
-                            .buttonStyle(.bordered)
+                .padding(.bottom)
+                
+                // Files Section
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Text("Source Files")
+                                .font(.headline)
+                            Spacer()
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                    } else {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 16) {
-                                ForEach(FileCategory.allCases, id: \.self) { category in
-                                    let categoryFiles = group.files.filter { $0.category == category }
-                                    if !categoryFiles.isEmpty {
-                                        VStack(alignment: .leading, spacing: 8) {
-                                            Text(category.rawValue.capitalized)
-                                                .font(.subheadline)
-                                                .foregroundColor(.secondary)
-                                                .padding(.leading, 4)
-                                            
-                                            VStack(spacing: 4) {
-                                                ForEach(categoryFiles) { file in
-                                                    HStack {
-                                                        Image(systemName: iconName(for: file))
-                                                            .foregroundColor(.accentColor)
-                                                        Text(file.url.lastPathComponent)
-                                                            .lineLimit(1)
-                                                        Spacer()
-                                                        Text(file.url.pathExtension.uppercased())
-                                                            .font(.caption)
-                                                            .foregroundColor(.secondary)
-                                                            .padding(.horizontal, 6)
-                                                            .padding(.vertical, 2)
-                                                            .background(Color.secondary.opacity(0.1))
-                                                            .cornerRadius(4)
-                                                    }
-                                                    .padding(.horizontal, 8)
-                                                    .padding(.vertical, 6)
-                                                    .background(Color.secondary.opacity(0.05))
-                                                    .cornerRadius(8)
-                                                }
-                                            }
-                                        }
-                                        
-                                        if category != FileCategory.allCases.last {
-                                            Divider()
-                                                .padding(.vertical, 8)
-                                        }
-                                    }
+                        
+                        if group.files.isEmpty {
+                            ContentUnavailableView {
+                                Label("No Files", systemImage: "doc")
+                            } description: {
+                                Text("Import files to generate cloze items")
+                            } actions: {
+                                Button("Import Files") {
+                                    showImportSheet.toggle()
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                        } else {
+                            FileListView(files: group.files)
+                        }
+                    }
+                    .padding()
+                }
+                .frame(maxWidth: .infinity)
+                
+                // Generation Controls
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Cloze Generation")
+                            .font(.headline)
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            Picker("Generation Mode", selection: $selectedGenerationMode) {
+                                ForEach(GenerationMode.allCases, id: \.self) { mode in
+                                    Text(mode.rawValue).tag(mode)
                                 }
                             }
+                            .pickerStyle(.segmented)
+                            
+                            HStack {
+                                Text("Items to Generate:")
+                                Stepper("\(numberOfClozes)", value: $numberOfClozes, in: 1...50)
+                            }
+                            
+                            Button(action: { showGenerationOptions.toggle() }) {
+                                Label("Advanced Options", systemImage: "gearshape")
+                            }
+                            .buttonStyle(.bordered)
+                            
+                            Button(action: generateClozes) {
+                                Label("Generate Cloze Items", systemImage: "wand.and.stars")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(group.files.isEmpty)
                         }
                     }
+                    .padding()
                 }
-                .padding()
-            }
-            
-            GroupBox("Statistics") {
-                Grid(alignment: .leading) {
-                    GridRow {
-                        Text("High Priority")
-                        Text("\(highPriorityCount)")
-                            .foregroundColor(.red)
+                .frame(maxWidth: .infinity)
+                
+                // Generated Sets Section
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Generated Sets")
+                            .font(.headline)
+                        
+                        if group.clozeItems.isEmpty {
+                            ContentUnavailableView {
+                                Label("No Generated Items", systemImage: "square.stack.3d.up")
+                            } description: {
+                                Text("Generate your first set of cloze items")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                        } else {
+                            GeneratedSetsView(items: group.clozeItems)
+                        }
                     }
-                    GridRow {
-                        Text("Medium Priority")
-                        Text("\(mediumPriorityCount)")
-                            .foregroundColor(.orange)
-                    }
-                    GridRow {
-                        Text("Low Priority")
-                        Text("\(lowPriorityCount)")
-                            .foregroundColor(.green)
-                    }
+                    .padding()
                 }
-                .padding()
+                .frame(maxWidth: .infinity)
             }
-        }
-        .padding()
-        .sheet(isPresented: $showExportSheet) {
-            ExportView(group: group)
+            .padding()
+            .frame(maxWidth: .infinity)
         }
         .sheet(isPresented: $showImportSheet) {
             ImportView()
                 .frame(width: 400, height: 300)
         }
+        .sheet(isPresented: $showGenerationOptions) {
+            GenerationOptionsView()
+        }
     }
     
-    private var highPriorityCount: Int {
-        group.clozeItems.filter { $0.priority == .high }.count
-    }
-    
-    private var mediumPriorityCount: Int {
-        group.clozeItems.filter { $0.priority == .medium }.count
-    }
-    
-    private var lowPriorityCount: Int {
-        group.clozeItems.filter { $0.priority == .low }.count
+    private func generateClozes() {
+        // Placeholder for AI-based generation
+        // This will be implemented when AI integration is added
     }
 }
 
-private struct ExportView: View {
-    let group: KnowledgeGroup
+private struct FileListView: View {
+    let files: [ImportedFile]
+    
+    var body: some View {
+        ForEach(FileCategory.allCases, id: \.self) { category in
+            let categoryFiles = files.filter { $0.category == category }
+            if !categoryFiles.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(category.rawValue.capitalized)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    ForEach(categoryFiles) { file in
+                        HStack {
+                            Image(systemName: "doc")
+                                .foregroundColor(.accentColor)
+                            Text(file.url.lastPathComponent)
+                            Spacer()
+                            Button(action: {}) {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(8)
+                        .background(Color.secondary.opacity(0.1))
+                        .cornerRadius(8)
+                    }
+                }
+                Divider()
+            }
+        }
+    }
+}
+
+private struct GeneratedSetsView: View {
+    let items: [ClozeItem]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(Array(items.enumerated()), id: \.1.id) { index, item in
+                if index < 3 {  // Preview only first 3 items
+                    HStack {
+                        Text(item.text)
+                            .lineLimit(2)
+                        Spacer()
+                        Text(item.priority.rawValue.capitalized)
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(item.priority.color.opacity(0.2))
+                            .foregroundColor(item.priority.color)
+                            .cornerRadius(4)
+                    }
+                    .padding()
+                    .background(Color.secondary.opacity(0.05))
+                    .cornerRadius(8)
+                }
+            }
+            
+            if items.count > 3 {
+                Text("+ \(items.count - 3) more items")
+                    .foregroundColor(.secondary)
+                    .padding(.leading)
+            }
+        }
+    }
+}
+
+private struct GenerationOptionsView: View {
     @Environment(\.dismiss) var dismiss
-    @EnvironmentObject var knowledgeManager: KnowledgeManager
-    @State private var exportError: Error?
-    @State private var showError = false
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Export Items")
-                .font(.title)
+            Text("Advanced Generation Options")
+                .font(.title2)
             
-            Text("Export \(group.clozeItems.count) cloze items from '\(group.name)' as CSV")
-                .multilineTextAlignment(.center)
-            
-            Button("Export to CSV") {
-                do {
-                    let url = try knowledgeManager.exportClozeItemsToCSV(for: group)
-                    NSWorkspace.shared.open(url)
-                    dismiss()
-                } catch {
-                    exportError = error
-                    showError = true
-                }
+            Form {
+                // Placeholder for future AI-specific options
+                Toggle("Include Context", isOn: .constant(true))
+                Toggle("Use Technical Terms", isOn: .constant(true))
+                Toggle("Generate Hints", isOn: .constant(false))
             }
-            .buttonStyle(.borderedProminent)
+            .padding()
+            
+            Button("Done") {
+                dismiss()
+            }
+            .buttonStyle(.bordered)
         }
-        .frame(width: 300, height: 200)
         .padding()
-        .alert("Export Error", isPresented: $showError, presenting: exportError) { _ in
-            Button("OK") { }
-        } message: { error in
-            Text(error.localizedDescription)
-        }
+        .frame(width: 400, height: 300)
     }
 }

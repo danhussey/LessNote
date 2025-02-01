@@ -8,6 +8,7 @@ struct LessNoteApp: App {
         WindowGroup {
             ThreeColumnView()
                 .environmentObject(knowledgeManager)
+                .frame(minWidth: 1000, minHeight: 600)
         }
         .windowStyle(.titleBar)
     }
