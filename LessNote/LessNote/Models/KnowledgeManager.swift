@@ -91,19 +91,8 @@ class KnowledgeManager: ObservableObject {
             }
         }
         
-        var generatedItems: [ClozeItem] = []
-        for file in importedFiles {
-            if let content = try? String(contentsOf: file.url, encoding: .utf8) {
-                let items = generateClozeItems(from: content)
-                generatedItems.append(contentsOf: items)
-            }
-        }
-        
-        let newSet = ClozeSet(items: generatedItems)
-        
         DispatchQueue.main.async {
             self.knowledgeGroups[groupIndex].files.append(contentsOf: importedFiles)
-            self.knowledgeGroups[groupIndex].clozeSets.append(newSet)
             self.objectWillChange.send()
         }
     }
@@ -136,6 +125,31 @@ class KnowledgeManager: ObservableObject {
                 original: cleanSentence,
                 priority: [.high, .medium, .low].randomElement() ?? .medium
             )
+        }
+    }
+    
+    func generateClozeSetForGroup(groupId: UUID, itemCount: Int) {
+        guard let groupIndex = knowledgeGroups.firstIndex(where: { $0.id == groupId }) else { return }
+        
+        var generatedItems: [ClozeItem] = []
+        
+        // Generate items from each file's content
+        for file in knowledgeGroups[groupIndex].files {
+            guard let content = try? String(contentsOf: file.url, encoding: .utf8) else { continue }
+            let items = generateClozeItems(from: content)
+            generatedItems.append(contentsOf: items)
+        }
+        
+        // Limit to requested number of items
+        if generatedItems.count > itemCount {
+            generatedItems = Array(generatedItems.shuffled().prefix(itemCount))
+        }
+        
+        let newSet = ClozeSet(items: generatedItems)
+        
+        DispatchQueue.main.async {
+            self.knowledgeGroups[groupIndex].clozeSets.append(newSet)
+            self.objectWillChange.send()
         }
     }
     

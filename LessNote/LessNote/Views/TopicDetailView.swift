@@ -179,8 +179,7 @@ struct TopicDetailView: View {
     }
     
     private func generateClozes() {
-        // Placeholder for AI-based generation
-        // This will be implemented when AI integration is added
+        knowledgeManager.generateClozeSetForGroup(groupId: group.id, itemCount: numberOfClozes)
     }
 }
 
